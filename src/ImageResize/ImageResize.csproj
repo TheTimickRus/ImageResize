@@ -16,6 +16,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Ardalis.GuardClauses" Version="4.0.1" />
+      <PackageReference Include="NLog" Version="5.0.1" />
+      <PackageReference Include="NLog.Extensions.Logging" Version="5.0.1" />
       <PackageReference Include="SixLabors.ImageSharp" Version="2.1.1" />
       <PackageReference Include="Spectre.Console" Version="0.44.1-preview.0.17" />
       <PackageReference Include="Spectre.Console.Cli" Version="0.44.1-preview.0.17" />
@@ -23,6 +26,12 @@
 
     <ItemGroup>
       <_DeploymentManifestIconFile Remove="Assets\compress-solid.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Configs\nlog.config">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

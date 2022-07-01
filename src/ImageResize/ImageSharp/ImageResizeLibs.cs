@@ -42,11 +42,12 @@ public static class ImageResizeLibs
 
     public static bool ExecuteForFolder(string basePath, FileInfo file, int resizePercentValue, int jpegQuality)
     {
+        var imgOutDir = file.DirectoryName?.Replace(basePath, $"{basePath}_Conv") ?? "";
+
         try
         {
             using var img = Resize(file.FullName, resizePercentValue);
             
-            var imgOutDir = file.DirectoryName?.Replace(basePath, $"{basePath}_Conv") ?? "";
             var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
             var imgOutExt = Path.GetExtension(file.Name).ToLower();
             var imgOutputFullName = Path.Combine(imgOutDir, $"{imgOutName}{imgOutExt}");

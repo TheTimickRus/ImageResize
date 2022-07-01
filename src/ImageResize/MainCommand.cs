@@ -1,10 +1,13 @@
 ﻿// ReSharper disable RedundantNullableFlowAttribute
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable ClassNeverInstantiated.Global
+// ReSharper disable InvertIf
 
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using Ardalis.GuardClauses;
 using ImageResize.ImageSharp;
+using NLog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -42,6 +45,18 @@ internal class MainCommand : Command<MainCommand.Settings>
         public int? ThreadsCount { get; init; }
     }
 
+    public MainCommand()
+    {
+        var config = new NLog.Config.LoggingConfiguration();
+        var logfile = new NLog.Targets.FileTarget("logfile")
+        {
+            FileName = $"Log ({DateTime.Now.ToString("s").Replace(":", "-")}).txt",
+            Name = "A"
+        };
+        config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
+        LogManager.Configuration = config;
+    }
+
     public override ValidationResult Validate([NotNull] CommandContext context, [NotNull] Settings settings)
     {
         if (settings.Paths is null || settings.Paths.Length == 0)
@@ -58,7 +73,7 @@ internal class MainCommand : Command<MainCommand.Settings>
         Console.Title = "ImageResize by TheTimickRus";
 
         AnsiConsole.Write(new FigletText("ImageResize").Color(Color.Yellow));
-        var titleRule = new Rule("ImageResize (v.1.3 (21.05.2022)) by TheTimickRus")
+        var titleRule = new Rule(Constants.AppFullTitle)
         {
             Alignment = Justify.Right,
             Style = new Style(Color.Blue)
@@ -68,10 +83,7 @@ internal class MainCommand : Command<MainCommand.Settings>
         /* Шапка */
         
         /* Обработка */
-        if (settings.Paths is null || settings.Paths.Length == 0)
-        {
-            throw new Exception("Не найдено файлов для обработки!");
-        }
+        Guard.Against.Null(settings.Paths);
 
         var threadsCount = settings.ThreadsCount ?? Environment.ProcessorCount;
         var startTime = DateTime.Now;
@@ -82,13 +94,13 @@ internal class MainCommand : Command<MainCommand.Settings>
             {
                 if (_successFilesCount != _progressPrevValue)
                 {
-                    Console.Title = $"ImageResize by TheTimickRus | Выполнено: {(_successFilesCount * 100 / (double)_allFilesCount):F}% ({_successFilesCount} из {_allFilesCount})";
+                    Console.Title = $"{Constants.AppVeryShortTitle} | {(_successFilesCount * 100 / (double)_allFilesCount):F}% ({_successFilesCount} из {_allFilesCount})";
                     _progressPrevValue = _successFilesCount;
                 }
 
                 if (_progressCancellationTokenSource.IsCancellationRequested)
                 {
-                    Console.Title = "ImageResize by TheTimickRus";
+                    Console.Title = Constants.AppShortTitle;
                     break;
                 }
                 

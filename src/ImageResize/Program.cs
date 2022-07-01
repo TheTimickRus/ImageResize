@@ -1,4 +1,5 @@
 ﻿using ImageResize;
+using NLog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -17,4 +18,8 @@ catch (Exception ex)
     AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
     Console.ReadKey();
     return -1;
+}
+finally
+{
+    LogManager.Shutdown();
 }
