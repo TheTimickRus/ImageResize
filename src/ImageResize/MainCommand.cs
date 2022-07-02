@@ -7,7 +7,6 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
 using ImageResize.ImageSharp;
-using NLog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -43,18 +42,6 @@ internal class MainCommand : Command<MainCommand.Settings>
         [Description("Сколько потоков использовать при работе? (int)")]
         [CommandOption("-t|--threads")]
         public int? ThreadsCount { get; init; }
-    }
-
-    public MainCommand()
-    {
-        var config = new NLog.Config.LoggingConfiguration();
-        var logfile = new NLog.Targets.FileTarget("logfile")
-        {
-            FileName = $"Log ({DateTime.Now.ToString("s").Replace(":", "-")}).txt",
-            Name = "A"
-        };
-        config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-        LogManager.Configuration = config;
     }
 
     public override ValidationResult Validate([NotNull] CommandContext context, [NotNull] Settings settings)

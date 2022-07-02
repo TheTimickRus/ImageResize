@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using ImageResize.Models;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 
@@ -40,22 +41,19 @@ public static class ImageResizeLibs
         }
     }
 
-    public static bool ExecuteForFolder(string basePath, FileInfo file, int resizePercentValue, int jpegQuality)
+    public static FileStatus ExecuteForFolder(string basePath, FileInfo file, int resizePercentValue, int jpegQuality)
     {
         var imgOutDir = file.DirectoryName?.Replace(basePath, $"{basePath}_Conv") ?? "";
-
+        var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
+        var imgOutExt = Path.GetExtension(file.Name).ToLower();
+        var imgOutputFullName = Path.Combine(imgOutDir, $"{imgOutName}{imgOutExt}");
+        
+        if (Directory.Exists(imgOutDir) is false)
+            Directory.CreateDirectory(imgOutDir);
+        
         try
         {
             using var img = Resize(file.FullName, resizePercentValue);
-            
-            var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
-            var imgOutExt = Path.GetExtension(file.Name).ToLower();
-            var imgOutputFullName = Path.Combine(imgOutDir, $"{imgOutName}{imgOutExt}");
-
-            if (Directory.Exists(imgOutDir) is false)
-            {
-                Directory.CreateDirectory(imgOutDir);
-            }
             
             switch (imgOutExt)
             {
@@ -66,14 +64,15 @@ public static class ImageResizeLibs
                     img.SaveAsPng(imgOutputFullName);
                     break;
                 default:
-                    return false;
+                    return FileStatus.Skip;
             }
             
-            return true;
+            return FileStatus.Processed;
         }
         catch
         {
-            return false;
+            file.CopyTo(imgOutputFullName);
+            return FileStatus.Copy;
         }
     }
     

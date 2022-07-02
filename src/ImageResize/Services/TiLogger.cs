@@ -1,22 +1,26 @@
-﻿using NLog;
+﻿// ReSharper disable TemplateIsNotCompileTimeConstantProblem
+
+using Serilog;
+using Serilog.Core;
+using Serilog.Formatting.Json;
 
 namespace ImageResize.Services;
 
 public static class TiLogger
 {
-    private static bool _isConfiguration = false;
+    private static bool _isConfiguration;
     private static Logger? _logger;
     
     public static void Info(string str)
     {
         Configuration();
-        _logger?.Info(str);
+        _logger?.Information(str);
     }
     
     public static void Warn(string str)
     {
         Configuration();
-        _logger?.Warn(str);
+        _logger?.Warning(str);
     }
     
     public static void Error(string str)
@@ -28,33 +32,24 @@ public static class TiLogger
     public static void Error(Exception ex)
     {
         Configuration();
-        _logger?.Error(ex);
+        _logger?.Error(ex, ex.Message);
     }
     
     public static void Fatal(Exception ex)
     {
         Configuration();
-        _logger?.Fatal(ex);
+        _logger?.Fatal(ex, ex.Message);
     }
     
     private static void Configuration()
     {
-        if (!_isConfiguration)
+        if (_isConfiguration)
             return;
-        
-        var config = new NLog.Config.LoggingConfiguration();
-        
-        var logfile = new NLog.Targets.FileTarget("logfile")
-        {
-            Name = Constants.AppFullTitle,
-            FileName = $"Log ({DateTime.Now.ToString("s").Replace(":", "-")}).txt",
-        };
-        
-        config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-        
-        LogManager.Configuration = config;
 
-        _logger = LogManager.GetCurrentClassLogger();
+        _logger = new LoggerConfiguration()
+            .WriteTo.File(Constants.LogFileName)
+            .CreateLogger();
+
         _isConfiguration = true;
     }
 }
