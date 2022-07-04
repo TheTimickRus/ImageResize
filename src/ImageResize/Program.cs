@@ -11,11 +11,24 @@ app.Configure(configurator =>
 
 try
 {
-    TiLogger.Info("Программа запущена!");
+    AnsiConsole.Clear();
+    AnsiConsole.Write(
+        new FigletText(Constants.AppVeryShortTitle)
+        {
+            Alignment = Justify.Center, 
+            Color = Constants.AppColor
+        });
+    AnsiConsole.WriteLine();
+    
+    TiLogger.Info($"{Constants.AppFullTitle} - Программа запущена!");
     return app.Run(args);
 }
 catch (Exception ex)
 {
+    AnsiConsole.Clear();
+    AnsiConsole.Write(new FigletText(Constants.AppVeryShortTitle) { Color = Constants.AppColor });
+    AnsiConsole.MarkupLine("\n> [bold red]В работе программы возникла фатальная ошибка![/]\n");
+    
     TiLogger.Fatal(ex);
     AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
 
@@ -24,5 +37,5 @@ catch (Exception ex)
 }
 finally
 {
-    TiLogger.Info("Работа программы завершена!\n");
+    TiLogger.Info($"{Constants.AppFullTitle} - Программа завершена!\n");
 }

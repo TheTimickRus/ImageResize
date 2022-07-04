@@ -4,8 +4,10 @@
 // ReSharper disable InvertIf
 
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
-using ImageResize.ImageSharp;
+using ImageResize.Models;
+using ImageResize.Services;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
@@ -23,7 +25,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         [Description("На сколько процентов уменьшить разрешение изображения? (от 10 до 100)")]
         [CommandOption("-p|--percent")]
         [DefaultValue(75)]
-        public int ResizePercentValue { get; init; }
+        public int ResizePercent { get; init; }
         
         [Description("В каком качестве сохранить изображения? (от 10 до 100)")]
         [CommandOption("-q|--jpegQuality")]
@@ -41,16 +43,17 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
     
     private readonly List<FileInfo> _files = new();
     private readonly List<(DirectoryInfo, List<FileInfo>)> _directories = new();
-    
-    private int _allFilesCount;
-    private int _successFilesCount;
+
+    private readonly ProgressModel _progress = new();
     
     public ImageResizeCommand()
     {
+        Console.Title = Constants.AppFullTitle;
+        
         // Создаем таблицу:
         _table = new Table
         {
-            Title = new TableTitle(Constants.AppFullTitle),
+            Title = new TableTitle(Constants.AppShortTitle, new Style(Constants.AppColor)),
             Border = new MarkdownTableBorder(),
             BorderStyle = new Style(foreground: Color.CornflowerBlue),
             ShowFooters = true
@@ -64,7 +67,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         // Создаем таблицу.
     }
     
-    public override int Execute(CommandContext context, Settings settings)
+    public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
     {
         Guard.Against.Null(settings.Paths);
         Guard.Against.Zero(settings.Paths.Length);
@@ -78,8 +81,8 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             if (file.Exists)
             {
                 _files.Add(file);
-                _allFilesCount++;
-
+                
+                TiLogger.Info($"Добавлен файл: {file.Name}");
                 continue;
             }
 
@@ -89,40 +92,85 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             {
                 var directoryFiles = directory.GetFiles("*.*", SearchOption.AllDirectories);
                 if (directoryFiles.Length == 0)
-                {
                     continue;
-                }
-
+                
                 _directories.Add((directory, directoryFiles.ToList()));
-                _allFilesCount += directoryFiles.Length; 
+                
+                TiLogger.Info($"Добавлена директория: {directory.Name}");
+                directoryFiles.ToList().ForEach(fInfo => TiLogger.Info($"\tДобавлен файл: {fInfo.Name}"));
             }
+
+            // Для расчета прогресса
+            _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
         }
 
         AnsiConsole.Live(_table)
             .Start(Progress);
-        
+
+        AnsiConsole.Write(
+            new Rule("Работа программы завершена! Нажмите любую кнопку, чтобы выйти...")
+            {
+                Style = new Style(Constants.AppColor)
+            });
+        AnsiConsole.WriteLine();
+        Console.ReadKey();
         return 0;
     }
 
-    private void Progress(LiveDisplayContext obj)
+    private void Progress(LiveDisplayContext ctx)
     {
         Guard.Against.Null(_settings);
-        
+
         var threadsCount = _settings.ThreadsCount ?? Environment.ProcessorCount;
 
         if (_files.Count > 0)
         {
-            Parallel.ForEach(_files, new ParallelOptions { MaxDegreeOfParallelism = threadsCount }, fInfo =>
-            {
-                if (ImageResizeLibs.ExecuteForFile(fInfo, _settings.ResizePercentValue, _settings.JpegQuality, out var newName))
+            Parallel.ForEach(_files, new ParallelOptions { MaxDegreeOfParallelism = threadsCount }, 
+                fInfo =>
                 {
-                    _successFilesCount++;
-                }
-                else
-                {
-                    
-                }
-            }); 
+                    var newFile = ImageSharpLib.ExecuteForFile(fInfo, _settings.ResizePercent, _settings.JpegQuality);
+                    AddRowToTable(ctx, newFile);
+                });
         }
+        
+        if (_directories.Count > 0)
+        {
+            foreach (var (baseDirInfo, baseDirFiles) in _directories)
+            {
+                Parallel.ForEach(baseDirFiles, new ParallelOptions { MaxDegreeOfParallelism = threadsCount }, 
+                    fInfo =>
+                    {
+                        var newFile = ImageSharpLib.ExecuteForFolder(
+                            baseDirInfo.FullName, 
+                            fInfo, 
+                            _settings.ResizePercent, 
+                            _settings.JpegQuality);
+
+                        AddRowToTable(ctx, newFile);
+                    });
+            }   
+        }
+    }
+
+    private void AddRowToTable(LiveDisplayContext ctx, FileModel? fileModel)
+    {
+        var data = new[]
+        {
+            fileModel?.Status.ToString() ?? FileStatus.Skip.ToString(), 
+            Path.GetFileName(fileModel?.Name) ?? "n/n", 
+            $"{fileModel?.OriginalResolution?.ToString() ?? "n/n"} -> {fileModel?.Resolution?.ToString() ?? "n/n"}", 
+            $"{fileModel?.OriginalSize.ToString("0.00")} -> {fileModel?.Size.ToString("0.00")}" 
+        };
+
+        _progress.ProcessedFilesCount++;
+        
+        TiLogger.Info(string.Join(',', data));
+        
+        _table.AddRow(data);
+        _table.Caption(
+            new TableTitle(
+                $"Выполнено: {_progress.ProcessedFilesCount} из {_progress.AllFilesCount} | {_progress.Percent}"));
+        
+        ctx.Refresh();
     }
 }

@@ -1,13 +1,14 @@
-﻿using ImageResize.Models;
+﻿using ByteSizeLib;
+using ImageResize.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 
-namespace ImageResize.ImageSharp;
+namespace ImageResize.Services;
 
-public static class ImageResizeLibs
+public static class ImageSharpLib
 {
-    public static bool ExecuteForFile(FileInfo file, int resizePercentValue, int jpegQuality, out string newName)
+    public static FileModel ExecuteForFile(FileInfo file, int resizePercent, int jpegQuality)
     {
         try
         {
@@ -16,9 +17,7 @@ public static class ImageResizeLibs
             var imgOutExt = Path.GetExtension(file.Name).ToLower();
             var imgOutputFullName = Path.Combine(imgOutDir ?? "", $"{imgOutName}_Conv{imgOutExt}");
             
-            using var img = Resize(file.FullName, resizePercentValue);
-
-            newName = Path.GetFileName(imgOutputFullName);
+            using var img = Resize(file.FullName, resizePercent, out var origResolution, out var newResolution);
             
             switch (imgOutExt)
             {
@@ -29,19 +28,26 @@ public static class ImageResizeLibs
                     img.SaveAsPng(imgOutputFullName);
                     break;
                 default:
-                    return false;
+                    throw new Exception();
             }
             
-            return true;
+            return new FileModel
+            {
+                Status = FileStatus.Processed,
+                Name  = imgOutputFullName,
+                OriginalResolution = origResolution,
+                Resolution = newResolution,
+                OriginalSize = ByteSize.FromBytes(file.Length),
+                Size = ByteSize.FromBytes(new FileInfo(imgOutputFullName).Length)
+            };
         }
         catch
         {
-            newName = "";
-            return false;
+            return new FileModel(FileStatus.Skip, file.Name, ByteSize.FromBytes(file.Length));
         }
     }
 
-    public static FileStatus ExecuteForFolder(string basePath, FileInfo file, int resizePercentValue, int jpegQuality)
+    public static FileModel ExecuteForFolder(string basePath, FileInfo file, int resizePercent, int jpegQuality)
     {
         var imgOutDir = file.DirectoryName?.Replace(basePath, $"{basePath}_Conv") ?? "";
         var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
@@ -53,7 +59,7 @@ public static class ImageResizeLibs
         
         try
         {
-            using var img = Resize(file.FullName, resizePercentValue);
+            using var img = Resize(file.FullName, resizePercent, out var origResolution, out var newResolution);
             
             switch (imgOutExt)
             {
@@ -64,25 +70,39 @@ public static class ImageResizeLibs
                     img.SaveAsPng(imgOutputFullName);
                     break;
                 default:
-                    return FileStatus.Skip;
+                    throw new Exception();
             }
-            
-            return FileStatus.Processed;
+
+            return new FileModel
+            {
+                Status = FileStatus.Processed,
+                Name  = imgOutputFullName,
+                OriginalResolution = origResolution,
+                Resolution = newResolution,
+                OriginalSize = ByteSize.FromBytes(file.Length),
+                Size = ByteSize.FromBytes(new FileInfo(imgOutputFullName).Length)
+            };;
         }
         catch
         {
-            file.CopyTo(imgOutputFullName);
-            return FileStatus.Copy;
+            file.CopyTo(imgOutputFullName, true);
+            return new FileModel(FileStatus.Copy, file.Name, ByteSize.FromBytes(file.Length));
         }
     }
-    
+
     /// <summary>
     /// Уменьшение разрешения на Х процентов
     /// </summary>
     /// <param name="file">Путь до изображения</param>
     /// <param name="resizePercentValue">Процент (X), на который нужно уменьшить разрешение изображения</param>
+    /// <param name="origResolution"></param>
+    /// <param name="newResolution"></param>
     /// <returns>Изображение</returns>
-    private static Image? Resize(string file, int resizePercentValue)
+    private static Image? Resize(
+        string file, 
+        int resizePercentValue, 
+        out ResolutionModel? origResolution, 
+        out ResolutionModel? newResolution)
     {
         try
         {
@@ -92,12 +112,17 @@ public static class ImageResizeLibs
             var newWidth = (int)(img.Width * percent);
             var newHeight = (int)(img.Height * percent);
             
+            origResolution = new ResolutionModel(img.Width, img.Height);
+            newResolution = new ResolutionModel(newWidth, newHeight);
+            
             img.Mutate(x => x.Resize(newWidth, newHeight));
-
+            
             return img;
         }
         catch
         {
+            origResolution = null;
+            newResolution = null;
             return null;
         } 
     }

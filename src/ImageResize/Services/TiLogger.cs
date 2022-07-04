@@ -2,10 +2,12 @@
 
 using Serilog;
 using Serilog.Core;
-using Serilog.Formatting.Json;
 
 namespace ImageResize.Services;
 
+/// <summary>
+/// Обертка для логгера Serilog
+/// </summary>
 public static class TiLogger
 {
     private static bool _isConfiguration;
@@ -47,7 +49,7 @@ public static class TiLogger
             return;
 
         _logger = new LoggerConfiguration()
-            .WriteTo.File(Constants.LogFileName)
+            .WriteTo.File($"{Environment.CurrentDirectory}\\{Constants.LogFileName}")
             .CreateLogger();
 
         _isConfiguration = true;
