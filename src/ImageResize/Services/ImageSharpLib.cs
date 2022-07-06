@@ -53,8 +53,8 @@ public static class ImageSharpLib
         var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
         var imgOutExt = Path.GetExtension(file.Name).ToLower();
         var imgOutputFullName = Path.Combine(imgOutDir, $"{imgOutName}{imgOutExt}");
-        
-        if (Directory.Exists(imgOutDir) is false)
+
+        if (!Directory.Exists(imgOutDir))
             Directory.CreateDirectory(imgOutDir);
         
         try
@@ -81,7 +81,7 @@ public static class ImageSharpLib
                 Resolution = newResolution,
                 OriginalSize = ByteSize.FromBytes(file.Length),
                 Size = ByteSize.FromBytes(new FileInfo(imgOutputFullName).Length)
-            };;
+            };
         }
         catch
         {
@@ -95,8 +95,8 @@ public static class ImageSharpLib
     /// </summary>
     /// <param name="file">Путь до изображения</param>
     /// <param name="resizePercentValue">Процент (X), на который нужно уменьшить разрешение изображения</param>
-    /// <param name="origResolution"></param>
-    /// <param name="newResolution"></param>
+    /// <param name="origResolution">Оригинальное разрешение</param>
+    /// <param name="newResolution">Новое разрешение</param>
     /// <returns>Изображение</returns>
     private static Image? Resize(
         string file, 

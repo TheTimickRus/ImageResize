@@ -49,7 +49,7 @@ public static class TiLogger
             return;
 
         _logger = new LoggerConfiguration()
-            .WriteTo.File($"{Environment.CurrentDirectory}\\{Constants.LogFileName}")
+            .WriteTo.File($"{Environment.CurrentDirectory}\\{Constants.Titles.LogFileName}")
             .CreateLogger();
 
         _isConfiguration = true;

@@ -13,29 +13,30 @@ try
 {
     AnsiConsole.Clear();
     AnsiConsole.Write(
-        new FigletText(Constants.AppVeryShortTitle)
+        new FigletText(Constants.Titles.VeryShortTitle)
         {
             Alignment = Justify.Center, 
-            Color = Constants.AppColor
+            Color = Constants.Colors.MainColor
         });
     AnsiConsole.WriteLine();
     
-    TiLogger.Info($"{Constants.AppFullTitle} - Программа запущена!");
+    TiLogger.Info($"{Constants.Titles.FullTitle} - Программа запущена!");
+    
     return app.Run(args);
 }
 catch (Exception ex)
 {
     AnsiConsole.Clear();
-    AnsiConsole.Write(new FigletText(Constants.AppVeryShortTitle) { Color = Constants.AppColor });
+    AnsiConsole.Write(new FigletText(Constants.Titles.VeryShortTitle) { Color = Constants.Colors.MainColor });
     AnsiConsole.MarkupLine("\n> [bold red]В работе программы возникла фатальная ошибка![/]\n");
     
     TiLogger.Fatal(ex);
     AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
 
-    Console.ReadKey();
+    AnsiConsole.Console.Input.ReadKey(true);
     return -1;
 }
 finally
 {
-    TiLogger.Info($"{Constants.AppFullTitle} - Программа завершена!\n");
+    TiLogger.Info($"{Constants.Titles.FullTitle} - Программа завершена!\n");
 }

@@ -4,26 +4,39 @@ namespace ImageResize;
 
 public static class Constants
 {
-    /// <summary>
-    /// Полное название программы
-    /// </summary>
-    public const string AppFullTitle = "ImageResize (v.1.4 (05.07.2022)) by TheTimickRus";
-    /// <summary>
-    /// Короткое название программы
-    /// </summary>
-    public const string AppShortTitle = "ImageResize by TheTimickRus";
-    /// <summary>
-    /// Очень короткое название программы
-    /// </summary>
-    public const string AppVeryShortTitle = "ImageResize";
+    public static class Titles
+    {
+        /// <summary>
+        /// *Название программы* (*Версия* (*дата*)) by *Разработчик*
+        /// </summary>
+        public const string FullTitle = "ImageResize (v.1.4 (05.07.2022)) by TheTimickRus";
+        /// <summary>
+        /// *Название программы* by *Разработчик*
+        /// </summary>
+        public const string ShortTitle = "ImageResize by TheTimickRus";
+        /// <summary>
+        /// *Название программы*
+        /// </summary>
+        public const string VeryShortTitle = "ImageResize";
+        /// <summary>
+        /// Имя лог-файла
+        /// </summary>
+        public const string LogFileName = $"{VeryShortTitle}.log";
+    }
 
-    /// <summary>
-    /// Имя лог-файла
-    /// </summary>
-    public const string LogFileName = "ImageResize.log";
-
-    /// <summary>
-    /// Основной цвет
-    /// </summary>
-    public static Color AppColor = Color.SteelBlue;
+    public static class Colors
+    {
+        /// <summary>
+        /// Основной цвет
+        /// </summary>
+        public static Color MainColor = Color.SteelBlue;
+        /// <summary>
+        /// Цвет успеха
+        /// </summary>
+        public static Color SuccessColor = Color.SeaGreen1;
+        /// <summary>
+        /// Цвет ошибки
+        /// </summary>
+        public static Color ErrorColor = Color.Red; 
+    }
 }

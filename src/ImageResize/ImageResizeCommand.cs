@@ -48,12 +48,12 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
     
     public ImageResizeCommand()
     {
-        Console.Title = Constants.AppFullTitle;
+        Console.Title = Constants.Titles.FullTitle;
         
         // Создаем таблицу:
         _table = new Table
         {
-            Title = new TableTitle(Constants.AppShortTitle, new Style(Constants.AppColor)),
+            Title = new TableTitle(Constants.Titles.ShortTitle, new Style(Constants.Colors.MainColor)),
             Border = new MarkdownTableBorder(),
             BorderStyle = new Style(foreground: Color.CornflowerBlue),
             ShowFooters = true
@@ -74,6 +74,8 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         
         _settings = settings;
         
+        TiLogger.Info("\tДобавление файлов...");
+        
         foreach (var path in settings.Paths)
         {
             // Для файлов
@@ -82,7 +84,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             {
                 _files.Add(file);
                 
-                TiLogger.Info($"Добавлен файл: {file.Name}");
+                TiLogger.Info($"\t\tДобавлен файл: {file.Name}");
                 continue;
             }
 
@@ -96,24 +98,29 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
                 
                 _directories.Add((directory, directoryFiles.ToList()));
                 
-                TiLogger.Info($"Добавлена директория: {directory.Name}");
-                directoryFiles.ToList().ForEach(fInfo => TiLogger.Info($"\tДобавлен файл: {fInfo.Name}"));
+                TiLogger.Info($"\tДобавлена директория: {directory.Name}");
+                directoryFiles.ToList().ForEach(fInfo => TiLogger.Info($"\t\tДобавлен файл: {fInfo.Name}"));
             }
-
-            // Для расчета прогресса
-            _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
         }
+        
+        _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
+        
+        TiLogger.Info($"\tДобавление файлов завершено! _files = {_files.Count}, _directories = {_directories.Sum(tuple => tuple.Item2.Count)}");
+        TiLogger.Info("\tОбработка файлов...");
 
         AnsiConsole.Live(_table)
             .Start(Progress);
+        
+        TiLogger.Info("\tОбработка файлов завершена!");
 
         AnsiConsole.Write(
             new Rule("Работа программы завершена! Нажмите любую кнопку, чтобы выйти...")
             {
-                Style = new Style(Constants.AppColor)
+                Style = new Style(Constants.Colors.SuccessColor)
             });
         AnsiConsole.WriteLine();
-        Console.ReadKey();
+        
+        AnsiConsole.Console.Input.ReadKey(true);
         return 0;
     }
 
@@ -164,7 +171,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 
         _progress.ProcessedFilesCount++;
         
-        TiLogger.Info(string.Join(',', data));
+        TiLogger.Info($"\t\t{string.Join(", ", data)}");
         
         _table.AddRow(data);
         _table.Caption(
