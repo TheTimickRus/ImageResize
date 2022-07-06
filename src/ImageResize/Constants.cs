@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using System.Diagnostics.CodeAnalysis;
+using Spectre.Console;
 
 namespace ImageResize;
 
@@ -24,6 +25,7 @@ public static class Constants
         public const string LogFileName = $"{VeryShortTitle}.log";
     }
 
+    [SuppressMessage("Usage", "CA2211:Поля, не являющиеся константами, не должны быть видимыми")]
     public static class Colors
     {
         /// <summary>

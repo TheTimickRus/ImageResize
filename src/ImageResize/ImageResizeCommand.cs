@@ -35,6 +35,11 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         [Description("Сколько потоков использовать при работе? (int)")]
         [CommandOption("-t|--threads")]
         public int? ThreadsCount { get; init; }
+        
+        [Description("Логгирование")]
+        [CommandOption("-l|--logging")]
+        [DefaultValue(false)]
+        public bool IsLogging { get; init; }
     }
 
     private Settings? _settings;
@@ -74,7 +79,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         
         _settings = settings;
         
-        TiLogger.Info("\tДобавление файлов...");
+        SerilogLib.Info("\tДобавление файлов...");
         
         foreach (var path in settings.Paths)
         {
@@ -84,7 +89,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             {
                 _files.Add(file);
                 
-                TiLogger.Info($"\t\tДобавлен файл: {file.Name}");
+                SerilogLib.Info($"\t\tДобавлен файл: {file.Name}");
                 continue;
             }
 
@@ -98,20 +103,20 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
                 
                 _directories.Add((directory, directoryFiles.ToList()));
                 
-                TiLogger.Info($"\tДобавлена директория: {directory.Name}");
-                directoryFiles.ToList().ForEach(fInfo => TiLogger.Info($"\t\tДобавлен файл: {fInfo.Name}"));
+                SerilogLib.Info($"\tДобавлена директория: {directory.Name}");
+                directoryFiles.ToList().ForEach(fInfo => SerilogLib.Info($"\t\tДобавлен файл: {fInfo.Name}"));
             }
         }
         
         _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
         
-        TiLogger.Info($"\tДобавление файлов завершено! _files = {_files.Count}, _directories = {_directories.Sum(tuple => tuple.Item2.Count)}");
-        TiLogger.Info("\tОбработка файлов...");
+        SerilogLib.Info($"\tДобавление файлов завершено! _files = {_files.Count}, _directories = {_directories.Sum(tuple => tuple.Item2.Count)}");
+        SerilogLib.Info("\tОбработка файлов...");
 
         AnsiConsole.Live(_table)
             .Start(Progress);
         
-        TiLogger.Info("\tОбработка файлов завершена!");
+        SerilogLib.Info("\tОбработка файлов завершена!");
 
         AnsiConsole.Write(
             new Rule("Работа программы завершена! Нажмите любую кнопку, чтобы выйти...")
@@ -161,6 +166,8 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 
     private void AddRowToTable(LiveDisplayContext ctx, FileModel? fileModel)
     {
+        Guard.Against.Null(_settings);
+        
         var data = new[]
         {
             fileModel?.Status.ToString() ?? FileStatus.Skip.ToString(), 
@@ -171,12 +178,12 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 
         _progress.ProcessedFilesCount++;
         
-        TiLogger.Info($"\t\t{string.Join(", ", data)}");
+        SerilogLib.Info($"\t\t{string.Join(", ", data)}");
         
         _table.AddRow(data);
         _table.Caption(
             new TableTitle(
-                $"Выполнено: {_progress.ProcessedFilesCount} из {_progress.AllFilesCount} | {_progress.Percent}"));
+                $"Выполнено: {_progress.ProcessedFilesCount} из {_progress.AllFilesCount} ({_progress.Percent})"));
         
         ctx.Refresh();
     }

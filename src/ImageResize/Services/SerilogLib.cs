@@ -8,7 +8,7 @@ namespace ImageResize.Services;
 /// <summary>
 /// Обертка для логгера Serilog
 /// </summary>
-public static class TiLogger
+public static class SerilogLib
 {
     private static bool _isConfiguration;
     private static Logger? _logger;

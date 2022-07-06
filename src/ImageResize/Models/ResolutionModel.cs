@@ -1,4 +1,6 @@
-﻿namespace ImageResize.Models;
+﻿// ReSharper disable MemberCanBePrivate.Global
+
+namespace ImageResize.Models;
 
 public class ResolutionModel
 {
