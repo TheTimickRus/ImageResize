@@ -7,15 +7,21 @@
         <Nullable>enable</Nullable>
         <LangVersion>default</LangVersion>
         <Company>TheTimickRus</Company>
-        <AssemblyVersion>1.3</AssemblyVersion>
-        <FileVersion>1.3</FileVersion>
-        <NeutralLanguage>ru</NeutralLanguage>
+        <AssemblyVersion>1.5.2</AssemblyVersion>
+        <FileVersion>1.5.2</FileVersion>
+        <NeutralLanguage>en</NeutralLanguage>
         <PackageVersion>1.3.0</PackageVersion>
         <Authors>TheTimickRus</Authors>
         <Copyright>TheTimickRus</Copyright>
+        <ApplicationIcon>Assets\Icon.ico</ApplicationIcon>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Ardalis.GuardClauses" Version="4.0.1" />
+      <PackageReference Include="ByteSize" Version="2.1.1" />
+      <PackageReference Include="Serilog" Version="2.11.1-dev-01397" />
+      <PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00947" />
       <PackageReference Include="SixLabors.ImageSharp" Version="2.1.1" />
       <PackageReference Include="Spectre.Console" Version="0.44.1-preview.0.17" />
       <PackageReference Include="Spectre.Console.Cli" Version="0.44.1-preview.0.17" />
