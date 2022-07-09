@@ -186,7 +186,10 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             $"{fileModel?.OriginalSize.ToString("0.00")} -> {fileModel?.Size.ToString("0.00")}" 
         };
 
-        _progress.ProcessedFilesCount++;
+        lock (_progress)
+        {
+            _progress.ProcessedFilesCount++;
+        }
         
         SerilogLib.Info($"\t\t{string.Join(", ", data)}");
         
