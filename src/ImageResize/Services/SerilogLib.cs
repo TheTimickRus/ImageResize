@@ -10,29 +10,43 @@ namespace ImageResize.Services;
 /// </summary>
 public static class SerilogLib
 {
+    public static bool IsLogging { get; set; }
+    
     private static bool _isConfiguration;
     private static Logger? _logger;
-    
+
     public static void Info(string str)
     {
+        if (!IsLogging)
+            return;
+
         Configuration();
         _logger?.Information(str);
     }
     
     public static void Warn(string str)
     {
+        if (!IsLogging)
+            return;
+        
         Configuration();
         _logger?.Warning(str);
     }
     
     public static void Error(string str)
     {
+        if (!IsLogging)
+            return;
+        
         Configuration();
         _logger?.Error(str);
     }
     
     public static void Error(Exception ex)
     {
+        if (!IsLogging)
+            return;
+        
         Configuration();
         _logger?.Error(ex, ex.Message);
     }

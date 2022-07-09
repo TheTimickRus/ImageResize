@@ -6,27 +6,19 @@ using Spectre.Console.Cli;
 var app = new CommandApp<ImageResizeCommand>();
 app.Configure(configurator =>
 {
-    configurator.PropagateExceptions();
+    configurator.Settings.ApplicationName = "ImageResize.exe";
+    configurator.Settings.ApplicationVersion = "v.1.5.2 (09.07.2022)";
+    configurator.Settings.ExceptionHandler += ex => 
+    {
+        AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.ErrorColor);
+        AnsiConsole.MarkupLine("\n> [bold red]A fatal error has occurred in the operation of the program![/]\n");
+        AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
+    
+        SerilogLib.Fatal(ex);
+
+        AnsiConsole.Console.Input.ReadKey(true);
+        return -1;
+    };
 });
 
-try
-{
-    AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.MainColor);
-    SerilogLib.Info($"{Constants.Titles.FullTitle} - Программа запущена!");
-    return app.Run(args);
-}
-catch (Exception ex)
-{
-    AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.ErrorColor);
-    AnsiConsole.MarkupLine("\n> [bold red]В работе программы возникла фатальная ошибка![/]\n");
-    AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
-    
-    SerilogLib.Fatal(ex);
-
-    AnsiConsole.Console.Input.ReadKey(true);
-    return -1;
-}
-finally
-{
-    SerilogLib.Info($"{Constants.Titles.FullTitle} - Программа завершена!\n");
-}
+return app.Run(args);

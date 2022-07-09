@@ -18,25 +18,25 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
-        [Description("Путь к изображению(-ям) или папкам с изображением(-ями)")]
+        [Description("Path to images or folders")]
         [CommandArgument(0, "[Paths]")]
         public string[]? Paths { get; init; }
 
-        [Description("На сколько процентов уменьшить разрешение изображения? (от 10 до 100)")]
+        [Description("How many percent to reduce the image resolution? (from 10 to 100)")]
         [CommandOption("-p|--percent")]
         [DefaultValue(75)]
         public int ResizePercent { get; init; }
         
-        [Description("В каком качестве сохранить изображения? (от 10 до 100)")]
+        [Description("In what quality should I save the images? (from 10 to 100)")]
         [CommandOption("-q|--jpegQuality")]
         [DefaultValue(50)]
         public int JpegQuality { get; init; } 
         
-        [Description("Сколько потоков использовать при работе? (int)")]
+        [Description("How many threads should I use when working? (int)")]
         [CommandOption("-t|--threads")]
         public int? ThreadsCount { get; init; }
         
-        [Description("Логгирование")]
+        [Description("Logging to a file")]
         [CommandOption("-l|--logging")]
         [DefaultValue(false)]
         public bool IsLogging { get; init; }
@@ -55,32 +55,33 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
     {
         Console.Title = Constants.Titles.FullTitle;
         
-        // Создаем таблицу:
         _table = new Table
         {
             Title = new TableTitle(Constants.Titles.ShortTitle, new Style(Constants.Colors.MainColor)),
             Border = new MarkdownTableBorder(),
-            BorderStyle = new Style(foreground: Color.CornflowerBlue),
+            BorderStyle = new Style(foreground: Constants.Colors.MainColor),
             ShowFooters = true
         };
         _table.Centered();
         _table.AddColumns(
-            new TableColumn("Статус") { Alignment = Justify.Center },
-            new TableColumn("Имя файла") { Alignment = Justify.Left },
-            new TableColumn("Разрешение") { Alignment = Justify.Right }, 
-            new TableColumn("Размер") { Alignment = Justify.Right });
-        // Создаем таблицу.
+            new TableColumn("Status") { Alignment = Justify.Center },
+            new TableColumn("Filename") { Alignment = Justify.Left },
+            new TableColumn("Resolution") { Alignment = Justify.Right }, 
+            new TableColumn("Size") { Alignment = Justify.Right });
     }
-    
+
     public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
     {
         Guard.Against.Null(settings.Paths);
-        Guard.Against.Zero(settings.Paths.Length);
-        
+
         _settings = settings;
         
-        SerilogLib.Info("\tДобавление файлов...");
+        AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.MainColor);
         
+        SerilogLib.IsLogging = _settings.IsLogging;
+        SerilogLib.Info($"{Constants.Titles.FullTitle} - The program is running!");
+        SerilogLib.Info("\tAdding files...");
+
         foreach (var path in settings.Paths)
         {
             // Для файлов
@@ -88,8 +89,8 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             if (file.Exists)
             {
                 _files.Add(file);
-                
-                SerilogLib.Info($"\t\tДобавлен файл: {file.Name}");
+
+                SerilogLib.Info($"\t\tFile added: {file.Name}");
                 continue;
             }
 
@@ -100,31 +101,42 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
                 var directoryFiles = directory.GetFiles("*.*", SearchOption.AllDirectories);
                 if (directoryFiles.Length == 0)
                     continue;
-                
+
                 _directories.Add((directory, directoryFiles.ToList()));
-                
-                SerilogLib.Info($"\tДобавлена директория: {directory.Name}");
-                directoryFiles.ToList().ForEach(fInfo => SerilogLib.Info($"\t\tДобавлен файл: {fInfo.Name}"));
+
+                SerilogLib.Info($"\tAdded directory: {directory.Name}");
+                directoryFiles.ToList().ForEach(fInfo => SerilogLib.Info($"\t\tFile added: {fInfo.Name}"));
             }
         }
-        
-        _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
-        
-        SerilogLib.Info($"\tДобавление файлов завершено! _files = {_files.Count}, _directories = {_directories.Sum(tuple => tuple.Item2.Count)}");
-        SerilogLib.Info("\tОбработка файлов...");
 
+        _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
+        _progress.ProcessedFilesCount = 0;
+        
+        Guard.Against.Zero(_progress.AllFilesCount);
+        
+        SerilogLib.Info($"\tAdding files is complete! Number of files: {_progress.AllFilesCount}\nFile processing...");
         AnsiConsole.Live(_table)
             .Start(Progress);
-        
-        SerilogLib.Info("\tОбработка файлов завершена!");
+        SerilogLib.Info("\tFile processing is complete!");
 
-        AnsiConsole.Write(
-            new Rule("Работа программы завершена! Нажмите любую кнопку, чтобы выйти...")
-            {
-                Style = new Style(Constants.Colors.SuccessColor)
-            });
-        AnsiConsole.WriteLine();
+        if (_progress.AllFilesCount == _progress.ProcessedFilesCount)
+        {
+            SerilogLib.Info("The work of the program is completed!");
+            AnsiConsoleLib.ShowRule(
+                "The work of the program is completed! Press any key to exit...",
+                Justify.Center,
+                Constants.Colors.SuccessColor);
+        }
+        else
+        {
+            SerilogLib.Info("Not all files have been processed!");
+            AnsiConsoleLib.ShowRule(
+                "Not all files have been processed! Press any key to exit...",
+                Justify.Center,
+                Constants.Colors.ErrorColor);
+        }
         
+        SerilogLib.Info($"{Constants.Titles.FullTitle} - The program is completed!\n");
         AnsiConsole.Console.Input.ReadKey(true);
         return 0;
     }
@@ -166,8 +178,6 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 
     private void AddRowToTable(LiveDisplayContext ctx, FileModel? fileModel)
     {
-        Guard.Against.Null(_settings);
-        
         var data = new[]
         {
             fileModel?.Status.ToString() ?? FileStatus.Skip.ToString(), 
@@ -183,7 +193,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         _table.AddRow(data);
         _table.Caption(
             new TableTitle(
-                $"Выполнено: {_progress.ProcessedFilesCount} из {_progress.AllFilesCount} ({_progress.Percent})"));
+                $"Completed: {_progress.ProcessedFilesCount} of {_progress.AllFilesCount} ({_progress.Percent})"));
         
         ctx.Refresh();
     }

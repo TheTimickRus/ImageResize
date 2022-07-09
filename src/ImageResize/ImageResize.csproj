@@ -7,9 +7,9 @@
         <Nullable>enable</Nullable>
         <LangVersion>default</LangVersion>
         <Company>TheTimickRus</Company>
-        <AssemblyVersion>1.5.1</AssemblyVersion>
-        <FileVersion>1.5.1</FileVersion>
-        <NeutralLanguage>ru</NeutralLanguage>
+        <AssemblyVersion>1.5.2</AssemblyVersion>
+        <FileVersion>1.5.2</FileVersion>
+        <NeutralLanguage>en</NeutralLanguage>
         <PackageVersion>1.3.0</PackageVersion>
         <Authors>TheTimickRus</Authors>
         <Copyright>TheTimickRus</Copyright>

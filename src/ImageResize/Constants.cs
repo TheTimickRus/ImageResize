@@ -10,7 +10,7 @@ public static class Constants
         /// <summary>
         /// *Название программы* (*Версия* (*дата*)) by *Разработчик*
         /// </summary>
-        public const string FullTitle = "ImageResize (v.1.4 (05.07.2022)) by TheTimickRus";
+        public const string FullTitle = "ImageResize (v.1.5.2 (09.07.2022)) by TheTimickRus";
         /// <summary>
         /// *Название программы* by *Разработчик*
         /// </summary>

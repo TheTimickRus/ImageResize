@@ -10,4 +10,15 @@ public static class AnsiConsoleLib
         AnsiConsole.Write(new FigletText(text) { Alignment = alignment, Color = color });
         AnsiConsole.WriteLine();
     }
+
+    public static void ShowRule(string text, Justify? alignment, Color? color)
+    {
+        AnsiConsole.Write(
+            new Rule(text)
+            {
+                Alignment = alignment,
+                Style = new Style(color)
+            });
+        AnsiConsole.WriteLine();
+    }
 }
