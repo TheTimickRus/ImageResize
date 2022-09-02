@@ -22,6 +22,7 @@ public static class ImageSharpLib
             switch (imgOutExt)
             {
                 case ".jpg":
+                case ".jpeg":
                     img.SaveAsJpeg(imgOutputFullName, new JpegEncoder { Quality = jpegQuality });
                     break; 
                 case ".png":

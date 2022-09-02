@@ -4,7 +4,9 @@
 // ReSharper disable InvertIf
 
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Ardalis.GuardClauses;
 using ImageResize.Models;
 using ImageResize.Services;
@@ -72,9 +74,17 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 
     public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
     {
-        Guard.Against.Null(settings.Paths);
-
         _settings = settings;
+
+        try
+        {
+            Guard.Against.Null(settings.Paths);
+        }
+        catch
+        {
+            RestartWithHelp();
+            return -1;
+        }
         
         AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.MainColor);
         
@@ -199,5 +209,25 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
                 $"Completed: {_progress.ProcessedFilesCount} of {_progress.AllFilesCount} ({_progress.Percent})"));
         
         ctx.Refresh();
+    }
+
+    /// <summary>
+    /// При попытке запустить программу без аргументов показываем Help
+    /// </summary>
+    private static void RestartWithHelp()
+    {
+        var exeName = AppDomain.CurrentDomain.FriendlyName;
+        var exeNameFullPath = Assembly.GetEntryAssembly()?.Location.Replace(".dll", ".exe");
+        
+        var cmdArgs = $"cls && \"{exeNameFullPath}\" -h && echo: &&  pause";
+        AnsiConsole.WriteLine(cmdArgs);
+
+        Process.Start(
+            new ProcessStartInfo
+            {
+                FileName = "cmd", 
+                Arguments = $"/c {cmdArgs}", 
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
     }
 }

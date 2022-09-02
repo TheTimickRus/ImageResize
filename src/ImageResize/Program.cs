@@ -13,7 +13,7 @@ app.Configure(configurator =>
         AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.ErrorColor);
         AnsiConsole.MarkupLine("\n> [bold red]A fatal error has occurred in the operation of the program![/]\n");
         AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
-    
+        
         SerilogLib.Fatal(ex);
 
         AnsiConsole.Console.Input.ReadKey(true);
