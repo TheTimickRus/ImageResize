@@ -7,7 +7,7 @@ var app = new CommandApp<ImageResizeCommand>();
 app.Configure(configurator =>
 {
     configurator.Settings.ApplicationName = "ImageResize.exe";
-    configurator.Settings.ApplicationVersion = "v.1.5.2 (09.07.2022)";
+    configurator.Settings.ApplicationVersion = "v.1.6.0 (02.09.2022)";
     configurator.Settings.ExceptionHandler += ex => 
     {
         AnsiConsoleLib.ShowFiglet(Constants.Titles.VeryShortTitle, Justify.Center, Constants.Colors.ErrorColor);

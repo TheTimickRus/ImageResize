@@ -15,7 +15,11 @@ public enum FileStatus
     /// <summary>
     /// Файл пропущен
     /// </summary>
-    Skip
+    Skip,
+    /// <summary>
+    /// Файл пропущен по Threshold
+    /// </summary>
+    Threshold
 }
 
 public class FileModel

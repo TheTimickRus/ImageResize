@@ -8,7 +8,16 @@ namespace ImageResize.Services;
 
 public static class ImageSharpLib
 {
-    public static FileModel ExecuteForFile(FileInfo file, int resizePercent, int jpegQuality)
+    /// <summary>
+    /// Обработка для файлов
+    /// </summary>
+    /// <param name="file"></param>
+    /// <param name="resizePercent"></param>
+    /// <param name="jpegQuality"></param>
+    /// <param name="threshold"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public static FileModel ExecuteForFile(FileInfo file, int resizePercent, int jpegQuality, int threshold)
     {
         try
         {
@@ -16,6 +25,16 @@ public static class ImageSharpLib
             var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
             var imgOutExt = Path.GetExtension(file.Name).ToLower();
             var imgOutputFullName = Path.Combine(imgOutDir ?? "", $"{imgOutName}_Conv{imgOutExt}");
+            
+            if (file.Length < threshold * 1024)
+            {
+                return new FileModel(FileStatus.Threshold, file.Name, ByteSize.FromBytes(file.Length));
+            }
+            
+            if (imgOutExt is not (".jpg" or ".jpeg" or ".png"))
+            {
+                return new FileModel(FileStatus.Skip, file.Name, ByteSize.FromBytes(file.Length));
+            }
             
             using var img = Resize(file.FullName, resizePercent, out var origResolution, out var newResolution);
             
@@ -48,7 +67,22 @@ public static class ImageSharpLib
         }
     }
 
-    public static FileModel ExecuteForFolder(string basePath, FileInfo file, int resizePercent, int jpegQuality)
+    /// <summary>
+    /// Обработка для файлов из директории
+    /// </summary>
+    /// <param name="basePath"></param>
+    /// <param name="file"></param>
+    /// <param name="resizePercent"></param>
+    /// <param name="jpegQuality"></param>
+    /// <param name="threshold"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public static FileModel ExecuteForFolder(
+        string basePath, 
+        FileInfo file, 
+        int resizePercent, 
+        int jpegQuality, 
+        int threshold)
     {
         var imgOutDir = file.DirectoryName?.Replace(basePath, $"{basePath}_Conv") ?? "";
         var imgOutName = Path.GetFileNameWithoutExtension(file.Name);
@@ -57,7 +91,19 @@ public static class ImageSharpLib
 
         if (!Directory.Exists(imgOutDir))
             Directory.CreateDirectory(imgOutDir);
-        
+
+        if (file.Length < threshold * 1024)
+        {
+            file.CopyTo(imgOutputFullName, true);
+            return new FileModel(FileStatus.Threshold, file.Name, ByteSize.FromBytes(file.Length));
+        }
+
+        if (imgOutExt is not (".jpg" or ".jpeg" or ".png"))
+        {
+            file.CopyTo(imgOutputFullName, true);
+            return new FileModel(FileStatus.Copy, file.Name, ByteSize.FromBytes(file.Length));
+        }
+
         try
         {
             using var img = Resize(file.FullName, resizePercent, out var origResolution, out var newResolution);

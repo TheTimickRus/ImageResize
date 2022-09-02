@@ -6,8 +6,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using Ardalis.GuardClauses;
+using ByteSizeLib;
 using ImageResize.Models;
 using ImageResize.Services;
 using Spectre.Console;
@@ -16,30 +16,41 @@ using Spectre.Console.Rendering;
 
 namespace ImageResize;
 
+/// <summary>
+/// ImageResize - Команда
+/// </summary>
 internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 {
+    /// <summary>
+    /// Настройки
+    /// </summary>
     public sealed class Settings : CommandSettings
     {
         [Description("Path to images or folders")]
         [CommandArgument(0, "[Paths]")]
         public string[]? Paths { get; init; }
+        
+        [Description("Files smaller than threshold will be skipped/copied without processing (int) (Default = 350 KB")]
+        [CommandOption("-t|--threshold")]
+        [DefaultValue(350)]
+        public int Threshold { get; init; }
 
-        [Description("How many percent to reduce the image resolution? (from 10 to 100)")]
+        [Description("In what resolution to save files? (from 10 to 100) (Default = 75 %)")]
         [CommandOption("-p|--percent")]
         [DefaultValue(75)]
         public int ResizePercent { get; init; }
         
-        [Description("In what quality should I save the images? (from 10 to 100)")]
-        [CommandOption("-q|--jpegQuality")]
+        [Description("In what quality to save files? (from 10 to 100) (Default = 50 %)")]
+        [CommandOption("-q|--quality")]
         [DefaultValue(50)]
         public int JpegQuality { get; init; } 
         
-        [Description("How many threads should I use when working? (int)")]
-        [CommandOption("-t|--threads")]
+        [Description("How many threads should I use when working? (int) (Default = Number of cores)")]
+        [CommandOption("--threads")]
         public int? ThreadsCount { get; init; }
         
-        [Description("Logging to a file")]
-        [CommandOption("-l|--logging")]
+        [Description("Logging to a file (Default = false)")]
+        [CommandOption("--logging")]
         [DefaultValue(false)]
         public bool IsLogging { get; init; }
     }
@@ -72,6 +83,12 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             new TableColumn("Size") { Alignment = Justify.Right });
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="settings"></param>
+    /// <returns></returns>
     public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
     {
         _settings = settings;
@@ -121,6 +138,11 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
 
         _progress.AllFilesCount = _files.Count + _directories.Sum(tuple => tuple.Item2.Count);
         _progress.ProcessedFilesCount = 0;
+        _progress.AllFilesSize = ByteSize.FromBytes(
+            _files
+                .Sum(info => info.Length) + 
+            _directories
+                .Sum(tuple => tuple.Item2.Sum(info => info.Length)));
         
         Guard.Against.Zero(_progress.AllFilesCount);
         
@@ -133,7 +155,8 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         {
             SerilogLib.Info("The work of the program is completed!");
             AnsiConsoleLib.ShowRule(
-                "The work of the program is completed! Press any key to exit...",
+                $"The work of the program is completed!" +
+                $"({_progress.AllFilesSize.ToString("#.##")} -> {_progress.ProcessedFilesSize.ToString("#.##")})",
                 Justify.Center,
                 Constants.Colors.SuccessColor);
         }
@@ -151,6 +174,10 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         return 0;
     }
 
+    /// <summary>
+    /// Обработка файлов
+    /// </summary>
+    /// <param name="ctx"></param>
     private void Progress(LiveDisplayContext ctx)
     {
         Guard.Against.Null(_settings);
@@ -162,7 +189,11 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
             Parallel.ForEach(_files, new ParallelOptions { MaxDegreeOfParallelism = threadsCount }, 
                 fInfo =>
                 {
-                    var newFile = ImageSharpLib.ExecuteForFile(fInfo, _settings.ResizePercent, _settings.JpegQuality);
+                    var newFile = ImageSharpLib.ExecuteForFile(
+                        fInfo, 
+                        _settings.ResizePercent, 
+                        _settings.JpegQuality,
+                        _settings.Threshold);
                     AddRowToTable(ctx, newFile);
                 });
         }
@@ -178,7 +209,8 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
                             baseDirInfo.FullName, 
                             fInfo, 
                             _settings.ResizePercent, 
-                            _settings.JpegQuality);
+                            _settings.JpegQuality,
+                            _settings.Threshold);
 
                         AddRowToTable(ctx, newFile);
                     });
@@ -186,6 +218,11 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         }
     }
 
+    /// <summary>
+    /// Заполнение таблицы
+    /// </summary>
+    /// <param name="ctx">Таблица</param>
+    /// <param name="fileModel">Файл</param>
     private void AddRowToTable(LiveDisplayContext ctx, FileModel? fileModel)
     {
         var data = new[]
@@ -199,6 +236,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
         lock (_progress)
         {
             _progress.ProcessedFilesCount++;
+            _progress.ProcessedFilesSize += fileModel?.Size ?? new ByteSize();
         }
         
         SerilogLib.Info($"\t\t{string.Join(", ", data)}");
@@ -216,11 +254,9 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
     /// </summary>
     private static void RestartWithHelp()
     {
-        var exeName = AppDomain.CurrentDomain.FriendlyName;
-        var exeNameFullPath = Assembly.GetEntryAssembly()?.Location.Replace(".dll", ".exe");
+        var exeFullName = AppDomain.CurrentDomain.FriendlyName;
         
-        var cmdArgs = $"cls && \"{exeNameFullPath}\" -h && echo: &&  pause";
-        AnsiConsole.WriteLine(cmdArgs);
+        var cmdArgs = $"cls && \"{exeFullName}\" -h && echo: && pause";
 
         Process.Start(
             new ProcessStartInfo
