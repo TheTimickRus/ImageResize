@@ -22,7 +22,7 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
 {
     private ImageResizeSettings? _settings;
     
-    private readonly Table _table;
+    private readonly Table _progressTable;
     
     private readonly List<FileInfo> _files = new();
     private readonly List<(DirectoryInfo, List<FileInfo>)> _directories = new();
@@ -31,21 +31,22 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
     
     public ImageResizeCommand()
     {
-        Console.Title = Constants.Titles.FullTitle;
-        
-        _table = new Table
+        _progressTable = new Table
         {
             Title = new TableTitle(Constants.Titles.ShortTitle, new Style(Constants.Colors.MainColor)),
             Border = new MarkdownTableBorder(),
             BorderStyle = new Style(foreground: Constants.Colors.MainColor),
             ShowFooters = true
         };
-        _table.Centered();
-        _table.AddColumns(
-            new TableColumn("Status") { Alignment = Justify.Center },
-            new TableColumn("Filename") { Alignment = Justify.Left },
-            new TableColumn("Resolution") { Alignment = Justify.Right }, 
-            new TableColumn("Size") { Alignment = Justify.Right });
+        
+        _progressTable
+            .Centered()
+            .AddColumns(
+                new TableColumn("Status") { Alignment = Justify.Center },
+                new TableColumn("Filename") { Alignment = Justify.Left },
+                new TableColumn("Resolution") { Alignment = Justify.Right }, 
+                new TableColumn("Size") { Alignment = Justify.Right }
+            );
     }
 
     /// <summary>
@@ -107,20 +108,20 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
             _files
                 .Sum(info => info.Length) + 
             _directories
-                .Sum(tuple => tuple.Item2.Sum(info => info.Length)));
+                .Sum(tuple => tuple.Item2.Sum(info => info.Length))
+        );
         
         Guard.Against.Zero(_progress.AllFilesCount);
         
         SerilogLib.Info($"\tAdding files is complete! Number of files: {_progress.AllFilesCount}\nFile processing...");
-        AnsiConsole.Live(_table)
-            .Start(Progress);
+        AnsiConsole.Live(_progressTable).Start(Progress);
         SerilogLib.Info("\tFile processing is complete!");
 
         if (_progress.AllFilesCount == _progress.ProcessedFilesCount)
         {
             SerilogLib.Info("The work of the program is completed!");
             AnsiConsoleLib.ShowRule(
-                $"The work of the program is completed!" +
+                "The work of the program is completed!" +
                 $"({_progress.AllFilesSize.ToString("#.##")} -> {_progress.ProcessedFilesSize.ToString("#.##")})",
                 Justify.Center,
                 Constants.Colors.SuccessColor);
@@ -158,7 +159,9 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
                         fInfo, 
                         _settings.ResizePercent, 
                         _settings.JpegQuality,
-                        _settings.Threshold);
+                        _settings.Threshold
+                    );
+                    
                     AddRowToTable(ctx, newFile);
                 });
         }
@@ -175,7 +178,8 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
                             fInfo, 
                             _settings.ResizePercent, 
                             _settings.JpegQuality,
-                            _settings.Threshold);
+                            _settings.Threshold
+                        );
 
                         AddRowToTable(ctx, newFile);
                     });
@@ -197,7 +201,7 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
             $"{fileModel?.OriginalResolution?.ToString() ?? "n/n"} -> {fileModel?.Resolution?.ToString() ?? "n/n"}", 
             $"{fileModel?.OriginalSize.ToString("0.00")} -> {fileModel?.Size.ToString("0.00")}" 
         };
-
+        
         lock (_progress)
         {
             _progress.ProcessedFilesCount++;
@@ -206,8 +210,8 @@ internal class ImageResizeCommand : Command<ImageResizeSettings>
         
         SerilogLib.Info($"\t\t{string.Join(", ", data)}");
         
-        _table.AddRow(data);
-        _table.Caption(
+        _progressTable.AddRow(data);
+        _progressTable.Caption(
             new TableTitle(
                 $"Completed: {_progress.ProcessedFilesCount} of {_progress.AllFilesCount} ({_progress.Percent})"));
         
