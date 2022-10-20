@@ -3,7 +3,6 @@
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InvertIf
 
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
@@ -14,48 +13,14 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
 
-namespace ImageResize;
+namespace ImageResize.Commands;
 
 /// <summary>
 /// ImageResize - Команда
 /// </summary>
-internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
+internal class ImageResizeCommand : Command<ImageResizeSettings>
 {
-    /// <summary>
-    /// Настройки
-    /// </summary>
-    public sealed class Settings : CommandSettings
-    {
-        [Description("Path to images or folders")]
-        [CommandArgument(0, "[Paths]")]
-        public string[]? Paths { get; init; }
-        
-        [Description("Files smaller than threshold will be skipped/copied without processing (int) (Default = 350 KB")]
-        [CommandOption("-t|--threshold")]
-        [DefaultValue(350)]
-        public int Threshold { get; init; }
-
-        [Description("In what resolution to save files? (from 10 to 100) (Default = 75 %)")]
-        [CommandOption("-p|--percent")]
-        [DefaultValue(75)]
-        public int ResizePercent { get; init; }
-        
-        [Description("In what quality to save files? (from 10 to 100) (Default = 50 %)")]
-        [CommandOption("-q|--quality")]
-        [DefaultValue(50)]
-        public int JpegQuality { get; init; } 
-        
-        [Description("How many threads should I use when working? (int) (Default = Number of cores)")]
-        [CommandOption("--threads")]
-        public int? ThreadsCount { get; init; }
-        
-        [Description("Logging to a file (Default = false)")]
-        [CommandOption("--logging")]
-        [DefaultValue(false)]
-        public bool IsLogging { get; init; }
-    }
-
-    private Settings? _settings;
+    private ImageResizeSettings? _settings;
     
     private readonly Table _table;
     
@@ -89,7 +54,7 @@ internal class ImageResizeCommand : Command<ImageResizeCommand.Settings>
     /// <param name="context"></param>
     /// <param name="settings"></param>
     /// <returns></returns>
-    public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
+    public override int Execute([NotNull] CommandContext context, [NotNull] ImageResizeSettings settings)
     {
         _settings = settings;
 
