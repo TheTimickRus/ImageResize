@@ -1,4 +1,6 @@
 ﻿// ReSharper disable TemplateIsNotCompileTimeConstantProblem
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 using Serilog;
 using Serilog.Core;
@@ -11,6 +13,7 @@ namespace ImageResize.Services;
 public static class SerilogLib
 {
     public static bool IsLogging { get; set; }
+    public static string FileName { get; set; } = Constants.Titles.LogFileName;
     
     private static bool _isConfiguration;
     private static Logger? _logger;
@@ -63,7 +66,7 @@ public static class SerilogLib
             return;
 
         _logger = new LoggerConfiguration()
-            .WriteTo.File($"{Environment.CurrentDirectory}\\{Constants.Titles.LogFileName}")
+            .WriteTo.File(FileName)
             .CreateLogger();
 
         _isConfiguration = true;

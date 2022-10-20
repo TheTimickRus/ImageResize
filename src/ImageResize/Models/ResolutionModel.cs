@@ -1,4 +1,5 @@
 ﻿// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ImageResize.Models;
 
@@ -13,13 +14,7 @@ public class ResolutionModel
     /// Высота изображения
     /// </summary>
     public int Height { get; set; }
-
-    /// <summary>
-    /// Пустой конструктор
-    /// </summary>
-    public ResolutionModel()
-    { }
-
+    
     /// <summary>
     /// Конструктор с параметрами
     /// </summary>
